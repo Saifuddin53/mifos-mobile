@@ -39,6 +39,7 @@ import org.mifos.mobile.ui.getThemeAttributeColor
 import org.mifos.mobile.ui.help.HelpActivity
 import org.mifos.mobile.ui.home.HomeOldFragment
 import org.mifos.mobile.ui.login.LoginActivity
+import org.mifos.mobile.ui.transfer_process.TransferProcessComposeFragment
 import org.mifos.mobile.utils.Constants
 import org.mifos.mobile.utils.TextDrawable
 import org.mifos.mobile.utils.Toaster
@@ -383,8 +384,7 @@ class HomeActivity :
             doubleBackToExitPressedOnce = true
             Toaster.show(findViewById(android.R.id.content), getString(R.string.exit_message))
             Handler().postDelayed({ doubleBackToExitPressedOnce = false }, 2000)
-        } else if (fragment is TransferProcessFragment) {
-            fragment.cancelTransferProcess()
+        } else if (fragment is TransferProcessComposeFragment) {
         }
 
         if (stackCount() != 0) {

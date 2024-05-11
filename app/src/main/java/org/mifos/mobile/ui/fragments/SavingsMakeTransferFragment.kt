@@ -1,7 +1,6 @@
 package org.mifos.mobile.ui.fragments
 
 import android.os.Bundle
-import android.os.Parcelable
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuInflater
@@ -22,11 +21,11 @@ import org.mifos.mobile.databinding.FragmentSavingsMakeTransferBinding
 import org.mifos.mobile.models.payload.TransferPayload
 import org.mifos.mobile.models.templates.account.AccountOption
 import org.mifos.mobile.models.templates.account.AccountOptionsTemplate
-import org.mifos.mobile.ui.activities.SavingsAccountContainerActivity
 import org.mifos.mobile.ui.activities.base.BaseActivity
 import org.mifos.mobile.ui.adapters.AccountsSpinnerAdapter
 import org.mifos.mobile.ui.enums.TransferType
 import org.mifos.mobile.ui.fragments.base.BaseFragment
+import org.mifos.mobile.ui.transfer_process.TransferProcessComposeFragment
 import org.mifos.mobile.utils.Constants
 import org.mifos.mobile.utils.DateHelper
 import org.mifos.mobile.utils.Network
@@ -159,7 +158,7 @@ class SavingsMakeTransferFragment : BaseFragment() {
     }
 
     /**
-     * Checks validation of `etRemark` and then opens [TransferProcessFragment] for
+     * Checks validation of `etRemark` and then opens [TransferProcessComposeFragment] for
      * initiating the transfer
      */
     private fun reviewTransfer() {
@@ -182,7 +181,7 @@ class SavingsMakeTransferFragment : BaseFragment() {
         transferPayload?.fromAccountNumber = fromAccountOption?.accountNo
         transferPayload?.toAccountNumber = toAccountOption?.accountNo
         (activity as BaseActivity?)?.replaceFragment(
-            TransferProcessFragment.newInstance(
+            TransferProcessComposeFragment.newInstance(
                 transferPayload,
                 TransferType.SELF,
             ),
