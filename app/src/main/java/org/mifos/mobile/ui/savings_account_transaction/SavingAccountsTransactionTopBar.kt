@@ -67,7 +67,7 @@ fun SavingAccountsTransactionTopBar(
 
 @Preview
 @Composable
-fun LoanAccountDetailTopBarPreview() {
+fun SavingAccountsTransactionTopBarPreview() {
     MifosMobileTheme {
         SavingAccountsTransactionTopBar({},{})
     }
