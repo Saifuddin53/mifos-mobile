@@ -28,14 +28,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewParameter
+import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.mifos.mobile.R
 import org.mifos.mobile.core.ui.component.MifosProgressIndicator
 import org.mifos.mobile.core.ui.component.NoInternet
+import org.mifos.mobile.core.ui.theme.MifosMobileTheme
 import org.mifos.mobile.models.payload.TransferPayload
-import org.mifos.mobile.ui.savings_account_withdraw.ErrorComponent
 import org.mifos.mobile.utils.MFErrorParser
 import org.mifos.mobile.utils.Network
 import org.mifos.mobile.utils.TransferUiState
@@ -118,7 +121,6 @@ fun TransferProcessContent(
     transfer: () -> Unit,
     cancel: () -> Unit
 ) {
-    val navigateBack: (Boolean) -> Unit = {}
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -219,6 +221,37 @@ fun TransferProcessContent(
                 }
             }
         }
+    }
+}
+
+
+class UiStatesParameterProvider : PreviewParameterProvider<TransferUiState> {
+    override val values: Sequence<TransferUiState>
+        get() = sequenceOf(
+            TransferUiState.Initial,
+            TransferUiState.Loading,
+            TransferUiState.TransferSuccess,
+        )
+}
+
+@Preview(showSystemUi = true)
+@Composable
+fun TransferProcessScreenPreview(
+    @PreviewParameter(UiStatesParameterProvider::class) transferUiState: TransferUiState
+) {
+    MifosMobileTheme {
+        TransferProcessScreen(
+            uiState = transferUiState,
+            payload = TransferPayload(
+                transferAmount = 100.0,
+                fromAccountNumber = "1234567890",
+                toAccountNumber = "0987654321",
+                transferDate = "2021-09-01",
+                transferDescription = "Transfer Description"
+            ),
+            transfer = {},
+            cancel = {},
+        )
     }
 }
 
