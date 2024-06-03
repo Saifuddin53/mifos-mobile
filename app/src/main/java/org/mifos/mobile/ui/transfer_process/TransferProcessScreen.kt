@@ -36,6 +36,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.mifos.mobile.R
 import org.mifos.mobile.core.ui.component.MifosProgressIndicator
+import org.mifos.mobile.core.ui.component.MifosTopBar
+import org.mifos.mobile.core.ui.component.MifosTopBarTitle
 import org.mifos.mobile.core.ui.component.NoInternet
 import org.mifos.mobile.core.ui.theme.MifosMobileTheme
 import org.mifos.mobile.models.payload.TransferPayload
@@ -70,6 +72,8 @@ fun TransferProcessScreen(
     val context = LocalContext.current
 
     Column(modifier = Modifier.fillMaxSize()) {
+
+        MifosTopBarTitle(navigateBack = cancel , topBarTitleResId = R.string.transfer)
 
         Box(modifier= Modifier.weight(1f)) {
             TransferProcessContent(payload = payload, transfer = transfer, cancel = cancel)
