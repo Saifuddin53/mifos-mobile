@@ -162,6 +162,7 @@ dependencies {
 
     // Jetpack Compose
     api(libs.androidx.activity.compose)
+    api(platform(libs.androidx.compose.bom))
     api(libs.androidx.compose.material3)
     api(libs.androidx.compose.foundation)
     api(libs.androidx.compose.foundation.layout)
@@ -172,6 +173,11 @@ dependencies {
     api(libs.androidx.lifecycle.runtimeCompose)
     debugApi(libs.androidx.compose.ui.tooling)
     api(libs.androidx.hilt.navigation.compose)
+
+    // google maps
+    implementation ("com.google.maps.android:maps-compose:4.4.1")
+
+
 }
 
 
