@@ -4,12 +4,11 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.fragment.app.viewModels
 import dagger.hilt.android.AndroidEntryPoint
-import org.mifos.mobile.core.ui.theme.MifosMobileTheme
+import org.mifos.mobile.core.ui.component.mifosComposeView
 import org.mifos.mobile.models.payload.TransferPayload
+import org.mifos.mobile.ui.activities.base.BaseActivity
 import org.mifos.mobile.ui.enums.TransferType
 import org.mifos.mobile.ui.fragments.base.BaseFragment
 import org.mifos.mobile.utils.Constants
@@ -27,19 +26,18 @@ class TransferProcessComposeFragment : BaseFragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (activity != null) {
-            arguments?.getCheckedParcelable(
-                TransferPayload::class.java,
-                Constants.PAYLOAD
-            )?.let {
+            arguments?.getCheckedParcelable(TransferPayload::class.java, Constants.PAYLOAD)?.let {
                 viewModel.setContent(it)
             }
-            (arguments?.getCheckedSerializable(
-                TransferType::class.java,
-                Constants.TRANSFER_TYPE
-            ) as TransferType).let {
+            (arguments?.getCheckedSerializable(TransferType::class.java, Constants.TRANSFER_TYPE) as TransferType).let {
                 viewModel.setTransferType(it)
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        (activity as? BaseActivity)?.hideToolbar()
     }
 
     override fun onCreateView(
@@ -47,27 +45,11 @@ class TransferProcessComposeFragment : BaseFragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View {
-        return ComposeView(requireContext()).apply {
-            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-            setContent {
-                MifosMobileTheme {
-                    TransferProcessScreen(
-                        cancel = {
-                                closeClicked()
-                        },
-                    )
-                }
-            }
+        return mifosComposeView(requireContext()) {
+            TransferProcessScreen(
+                navigateBack = { activity?.supportFragmentManager?.popBackStack() },
+            )
         }
-    }
-
-
-
-    /**
-     * Closes the transfer fragment
-     */
-    private fun closeClicked() {
-        activity?.supportFragmentManager?.popBackStack()
     }
 
     companion object {
@@ -79,7 +61,10 @@ class TransferProcessComposeFragment : BaseFragment() {
          * @param type    enum of [TransferType]
          * @return Instance of [TransferProcessComposeFragment]
          */
-        fun newInstance(payload: TransferPayload?, type: TransferType?): TransferProcessComposeFragment {
+        fun newInstance(
+            payload: TransferPayload?,
+            type: TransferType?
+        ): TransferProcessComposeFragment {
             val fragment = TransferProcessComposeFragment()
             val args = Bundle()
             args.putParcelable(Constants.PAYLOAD, payload)

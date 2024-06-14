@@ -10,15 +10,14 @@ import kotlinx.coroutines.launch
 import org.mifos.mobile.models.payload.TransferPayload
 import org.mifos.mobile.repositories.TransferRepository
 import org.mifos.mobile.ui.enums.TransferType
-import org.mifos.mobile.utils.TransferUiState
 import javax.inject.Inject
 
 @HiltViewModel
 class TransferProcessViewModel @Inject constructor(private val transferRepositoryImp: TransferRepository) :
     ViewModel() {
 
-    private val _transferUiState = MutableStateFlow<TransferUiState>(TransferUiState.Initial)
-    val transferUiState: StateFlow<TransferUiState> get() = _transferUiState
+    private val _transferUiState = MutableStateFlow<TransferProcessUiState>(TransferProcessUiState.Initial)
+    val transferUiState: StateFlow<TransferProcessUiState> get() = _transferUiState
 
     private var _transferPayload: MutableStateFlow<TransferPayload?> = MutableStateFlow(null)
     val transferPayload: StateFlow<TransferPayload?> get() = _transferPayload
@@ -26,30 +25,32 @@ class TransferProcessViewModel @Inject constructor(private val transferRepositor
     private var _transferType: MutableStateFlow<TransferType?> = MutableStateFlow(null)
     val transferType: StateFlow<TransferType?> get() = _transferType
 
-    fun makeTransfer(payload: TransferPayload) {
-        viewModelScope.launch {
-            _transferUiState.value = TransferUiState.Loading
-            transferRepositoryImp.makeTransfer(
-                payload.fromOfficeId,
-                payload.fromClientId,
-                payload.fromAccountType,
-                payload.fromAccountId,
-                payload.toOfficeId,
-                payload.toClientId,
-                payload.toAccountType,
-                payload.toAccountId,
-                payload.transferDate,
-                payload.transferAmount,
-                payload.transferDescription,
-                payload.dateFormat,
-                payload.locale,
-                payload.fromAccountNumber,
-                payload.toAccountNumber,
-                transferType.value
-            ).catch { e ->
-                _transferUiState.value = TransferUiState.Error(e)
-            }.collect {
-                _transferUiState.value = TransferUiState.TransferSuccess
+    fun makeTransfer() {
+        transferPayload.value?.let { payload ->
+            viewModelScope.launch {
+                _transferUiState.value = TransferProcessUiState.Loading
+                transferRepositoryImp.makeTransfer(
+                    fromOfficeId = payload.fromOfficeId,
+                    fromClientId = payload.fromClientId,
+                    fromAccountType = payload.fromAccountType,
+                    fromAccountId = payload.fromAccountId,
+                    toOfficeId = payload.toOfficeId,
+                    toClientId = payload.toClientId,
+                    toAccountType = payload.toAccountType,
+                    toAccountId = payload.toAccountId,
+                    transferDate = payload.transferDate,
+                    transferAmount = payload.transferAmount,
+                    transferDescription = payload.transferDescription,
+                    dateFormat = payload.dateFormat,
+                    locale = payload.locale,
+                    fromAccountNumber = payload.fromAccountNumber,
+                    toAccountNumber = payload.toAccountNumber,
+                    transferType = transferType.value
+                ).catch { e ->
+                    _transferUiState.value = TransferProcessUiState.Error(e.message)
+                }.collect {
+                    _transferUiState.value = TransferProcessUiState.Success
+                }
             }
         }
     }
@@ -61,5 +62,11 @@ class TransferProcessViewModel @Inject constructor(private val transferRepositor
     fun setTransferType(transferType: TransferType) {
         _transferType.value = transferType
     }
+}
 
+sealed class TransferProcessUiState {
+    data object Initial : TransferProcessUiState()
+    data object Loading : TransferProcessUiState()
+    data object Success : TransferProcessUiState()
+    data class Error(val errorMessage: String?) : TransferProcessUiState()
 }

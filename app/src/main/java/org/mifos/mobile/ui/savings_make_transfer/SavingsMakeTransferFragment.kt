@@ -1,40 +1,7 @@
 package org.mifos.mobile.ui.savings_make_transfer
 
-import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.Menu
-import android.view.MenuInflater
-import android.view.MenuItem
-import android.view.View
-import android.view.ViewGroup
-import android.widget.EditText
-import android.widget.Spinner
-import androidx.fragment.app.viewModels
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
-import com.github.therajanmaurya.sweeterror.SweetUIErrorHandler
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.launch
-import org.mifos.mobile.R
-import org.mifos.mobile.databinding.FragmentSavingsMakeTransferBinding
-import org.mifos.mobile.models.payload.TransferPayload
-import org.mifos.mobile.models.templates.account.AccountOption
-import org.mifos.mobile.models.templates.account.AccountOptionsTemplate
-import org.mifos.mobile.ui.activities.base.BaseActivity
-import org.mifos.mobile.ui.adapters.AccountsSpinnerAdapter
-import org.mifos.mobile.ui.enums.TransferType
-import org.mifos.mobile.ui.fragments.TransferProcessFragment
 import org.mifos.mobile.ui.fragments.base.BaseFragment
-import org.mifos.mobile.ui.transfer_process.TransferProcessComposeFragment
-import org.mifos.mobile.utils.Constants
-import org.mifos.mobile.utils.DateHelper
-import org.mifos.mobile.utils.Network
-import org.mifos.mobile.utils.ParcelableAndSerializableUtils.getCheckedParcelable
-import org.mifos.mobile.utils.SavingsAccountUiState
-import org.mifos.mobile.utils.Toaster
-import org.mifos.mobile.utils.Utils
-import org.mifos.mobile.utils.getTodayFormatted
 
 /**
  * Created by Rajan Maurya on 10/03/17.
