@@ -49,25 +49,15 @@ import org.mifos.mobile.utils.DateHelper
 import org.mifos.mobile.utils.DateHelper.getDateAsStringFromLong
 import org.mifos.mobile.utils.DatePick
 import java.time.Instant
-
+/*
 @Composable
 fun SavingAccountsTransactionFilterDialog(
-    viewModel: SavingAccountsTransactionViewModel,
     filterByDateAndType: (Long?, Long?, List<CheckboxStatus?>?) -> Unit,
     filterByDate: (Long?, Long?) -> Unit,
     filterByType: (List<CheckboxStatus?>?) -> Unit,
-    context: Context
 ) {
-
     val datePickerState = remember { mutableStateOf(false) }
-    val datePick: MutableState<DatePick?> = remember {
-        mutableStateOf(null)
-    }
-
-    val checkboxStates by viewModel.checkboxStates.collectAsState()
-    val selectedCheckboxOptionIndex by viewModel.selectedCheckboxIndexList.collectAsState()
-
-    val selectedOptionIndex by viewModel.selectedOptionIndex.collectAsState()
+    val datePick: MutableState<DatePick?> = remember { mutableStateOf(null) }
 
     AlertDialog(
         onDismissRequest = {  },
@@ -494,3 +484,5 @@ fun DatePickerContent(
         }
     }
 }
+
+ */

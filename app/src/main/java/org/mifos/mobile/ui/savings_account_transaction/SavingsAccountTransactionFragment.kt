@@ -13,14 +13,18 @@ import org.mifos.mobile.utils.Constants
 
 
 @AndroidEntryPoint
-class SavingAccountsTransactionFragment: BaseFragment() {
+class SavingAccountsTransactionFragment : BaseFragment() {
 
     private val viewModel: SavingAccountsTransactionViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         (activity as? SavingsAccountContainerActivity)?.hideToolbar()
-        if (arguments != null) viewModel.setSavingsId(arguments?.getLong(Constants.SAVINGS_ID)!!)
+        if (arguments != null) {
+            arguments?.getLong(Constants.SAVINGS_ID)?.let {
+                viewModel.setSavingsId(it)
+            }
+        }
     }
 
     override fun onCreateView(
@@ -28,29 +32,12 @@ class SavingAccountsTransactionFragment: BaseFragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View {
-        if (savedInstanceState == null) {
-            viewModel.loadSavingsWithAssociations(viewModel.savingsId)
-        }
         return mifosComposeView(requireContext()) {
-            activity?.let {
-                SavingsAccountTransactionScreen(
-                    navigateBack = { activity?.supportFragmentManager?.popBackStack() },
-                )
-            }
+            SavingsAccountTransactionScreen(
+                navigateBack = { activity?.supportFragmentManager?.popBackStack() },
+            )
         }
     }
-
-
-//    private fun filterSavingsAccountTransactionsByType(statusModelList: List<CheckboxStatus?>?): List<Transactions?> {
-//        val filteredSavingsTransactions: MutableList<Transactions?> = ArrayList()
-//        for (status in viewModel
-//            .getCheckedStatus(statusModelList)!!) {
-//            viewModel
-//                .filterTransactionListByType(transactionsList, status, getCheckBoxStatusStrings())
-//                ?.let { filteredSavingsTransactions.addAll(it) }
-//        }
-//        return filteredSavingsTransactions
-//    }
 
     companion object {
         fun newInstance(savingsId: Long?): SavingAccountsTransactionFragment {

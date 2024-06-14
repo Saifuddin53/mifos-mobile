@@ -32,9 +32,8 @@ import org.mifos.mobile.core.ui.theme.MifosMobileTheme
 @Composable
 fun SavingAccountsTransactionTopBar(
     navigateBack: () -> Unit,
-    filterDialog: () -> Unit
+    openFilterDialog: () -> Unit
 ) {
-
     TopAppBar(
         modifier = Modifier,
         title = { Text(text = stringResource(id = R.string.savings_account_transaction)
@@ -54,7 +53,7 @@ fun SavingAccountsTransactionTopBar(
             containerColor = MaterialTheme.colorScheme.background
         ),
         actions = {
-            IconButton(onClick = { filterDialog() }) {
+            IconButton(onClick = { openFilterDialog() }) {
                 Icon(
                     imageVector = Icons.Filled.FilterList,
                     contentDescription = "Menu",

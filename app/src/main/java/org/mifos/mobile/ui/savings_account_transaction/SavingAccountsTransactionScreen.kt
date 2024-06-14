@@ -18,12 +18,15 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CompareArrows
 import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -40,6 +43,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.mifos.mobile.MifosSelfServiceApp
 import org.mifos.mobile.R
 import org.mifos.mobile.core.ui.component.EmptyDataComponentWithModifiedMessageAndIcon
+import org.mifos.mobile.core.ui.component.EmptyDataView
+import org.mifos.mobile.core.ui.component.MFScaffold
 import org.mifos.mobile.core.ui.component.MifosErrorComponent
 import org.mifos.mobile.core.ui.component.MifosProgressIndicatorOverlay
 import org.mifos.mobile.core.ui.theme.MifosMobileTheme
@@ -52,6 +57,7 @@ import org.mifos.mobile.utils.CurrencyUtil
 import org.mifos.mobile.utils.DateHelper.getDateAsString
 import org.mifos.mobile.utils.Network
 import org.mifos.mobile.utils.SavingsAccountUiState
+import org.mifos.mobile.utils.Utils
 
 @Composable
 fun SavingsAccountTransactionScreen(
@@ -60,136 +66,150 @@ fun SavingsAccountTransactionScreen(
 ) {
 
     val uiState by viewModel.savingAccountsTransactionUiState.collectAsStateWithLifecycle()
-    val dialogState by viewModel.isDialogOpen.collectAsStateWithLifecycle()
-    val context: Context = LocalContext.current
-    viewModel.setCheckboxStatesList(context)
+    val context = LocalContext.current
+
+    LaunchedEffect(key1 = Unit) {
+        viewModel.setCheckboxStatesList(context)
+    }
 
     SavingsAccountTransactionScreen(
         uiState = uiState,
-        viewModel = viewModel,
         navigateBack = navigateBack,
         retryConnection = { viewModel.loadSavingsWithAssociations(viewModel.savingsId) },
-        dialogState = dialogState,
-        context = context
     )
 }
 
 @Composable
 fun SavingsAccountTransactionScreen(
-    uiState: SavingsAccountUiState,
-    viewModel: SavingAccountsTransactionViewModel,
+    uiState: SavingsAccountTransactionUiState,
     navigateBack: () -> Unit,
     retryConnection: () -> Unit,
-    dialogState: Boolean,
-    context: Context
 ) {
-    val savingAccount = rememberSaveable { mutableStateOf(SavingsWithAssociations()) }
-    val transactionList: List<Transactions?> = savingAccount.value.transactions.toList()
+    val context = LocalContext.current
+    var transactionList by rememberSaveable { mutableStateOf(listOf<Transactions>()) }
+    var isDialogOpen by rememberSaveable { mutableStateOf(false) }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-
-        SavingAccountsTransactionTopBar(
-            navigateBack = navigateBack,
-            filterDialog = { viewModel.setDialogOpen(true) }
-        )
-
-        Box(modifier = Modifier.weight(1f)) {
-
-            when (uiState) {
-                is SavingsAccountUiState.SuccessLoadingSavingsWithAssociations -> {
-                    if(uiState.savingAccount.transactions.isNotEmpty()) {
-                        savingAccount.value = uiState.savingAccount
-                        SavingsAccountTransactionContent(transactionList = transactionList)
-                    } else {
-                        MifosErrorComponent(isEmptyData = true)
+    MFScaffold(
+        topBar = {
+            SavingAccountsTransactionTopBar(
+                navigateBack = navigateBack,
+                openFilterDialog = { isDialogOpen = true }
+            )
+        },
+        scaffoldContent = { paddingValues ->
+            Box(modifier = Modifier.padding(paddingValues = paddingValues)) {
+                when (uiState) {
+                    is SavingsAccountTransactionUiState.Loading -> {
+                        MifosProgressIndicatorOverlay()
                     }
-                }
 
-                is SavingsAccountUiState.Loading -> {
-                    MifosProgressIndicatorOverlay()
-                }
+                    is SavingsAccountTransactionUiState.Error -> {
+                        MifosErrorComponent(
+                            isNetworkConnected = Network.isConnected(context),
+                            isEmptyData = false,
+                            isRetryEnabled = true,
+                            onRetry = retryConnection
+                        )
+                    }
 
-                is SavingsAccountUiState.Error -> {
-                    MifosErrorComponent(
-                        isNetworkConnected = Network.isConnected(context),
-                        isEmptyData = false,
-                        isRetryEnabled = true,
-                        onRetry = retryConnection
-                    )
-                }
-
-                is SavingsAccountUiState.ShowFilteredTransactionsList -> {
-                    if(uiState.savingAccountsTransactionList != null) {
-                        if(uiState.savingAccountsTransactionList.isNotEmpty()) {
-                            SavingsAccountTransactionContent(
-                                transactionList = uiState.savingAccountsTransactionList
+                    is SavingsAccountTransactionUiState.Success -> {
+                        if (uiState.savingAccountsTransactionList.isNullOrEmpty()) {
+                            EmptyDataView(
+                                icon = R.drawable.ic_compare_arrows_black_24dp,
+                                error = R.string.no_transaction_found
                             )
-                        }else {
-                            EmptyDataComponentWithModifiedMessageAndIcon(isEmptyData = true,
-                                message = stringResource(id = R.string.no_transaction_found),
-                                icon = Icons.Filled.CompareArrows)
+                        } else {
+                            transactionList = uiState.savingAccountsTransactionList
+                            SavingsAccountTransactionContent(transactionList = transactionList)
                         }
-                    } else {
-                        MifosErrorComponent(isEmptyData = true)
                     }
                 }
-
-                is SavingsAccountUiState.Initial -> Unit
-
-                else -> Unit
             }
         }
+    )
 
-        if(dialogState) {
-            SavingAccountsTransactionFilterDialog(
-                viewModel = viewModel,
-                filterByDateAndType = { startDate, endDate, statusModelList ->
-                    val transactionListToFilter = filterSavingsAccountTransactionsByType(
-                        statusModelList,
-                        viewModel,
-                        transactionList,
-                        context
-                    )
-                    Toast.makeText(context, R.string.filtered, Toast.LENGTH_SHORT).show()
-                    viewModel.filterTransactionList(
-                        transactionListToFilter,
-                        startDate,
-                        endDate,
-                    )
-                },
-                filterByDate = { startDate, endDate ->
-                    Toast.makeText(context, R.string.filtered, Toast.LENGTH_SHORT).show()
-                    viewModel.filterTransactionList(
-                        transactionList,
-                        startDate,
-                        endDate,
-                    )
-                },
-                filterByType = { statusModelList ->
-                    val transactionListToFilter = filterSavingsAccountTransactionsByType(
-                        statusModelList,
-                        viewModel,
-                        transactionList,
-                        context
-                    )
-                    Toast.makeText(context, R.string.filtered, Toast.LENGTH_SHORT).show()
-                    viewModel.filterTransactionList(
-                        transactionListToFilter,
-                        null,
-                        null,
-                    )
-                },
-                context = context
+    if (isDialogOpen) {
+//        SavingAccountsTransactionFilterDialog(
+//            filterByDateAndType = { startDate, endDate, statusModelList ->
+//                val transactionListToFilter = filterSavingsAccountTransactionsByType(
+//                    statusModelList,
+//                    viewModel,
+//                    transactionList,
+//                    context
+//                )
+//                Toast.makeText(context, R.string.filtered, Toast.LENGTH_SHORT).show()
+//                viewModel.filterTransactionList(
+//                    transactionListToFilter,
+//                    startDate,
+//                    endDate,
+//                )
+//            },
+//            filterByDate = { startDate, endDate ->
+//                Toast.makeText(context, R.string.filtered, Toast.LENGTH_SHORT).show()
+//                viewModel.filterTransactionList(
+//                    transactionList,
+//                    startDate,
+//                    endDate,
+//                )
+//            },
+//            filterByType = { statusModelList ->
+//                val transactionListToFilter = filterSavingsAccountTransactionsByType(
+//                    statusModelList,
+//                    viewModel,
+//                    transactionList,
+//                    context
+//                )
+//                Toast.makeText(context, R.string.filtered, Toast.LENGTH_SHORT).show()
+//                viewModel.filterTransactionList(
+//                    transactionListToFilter,
+//                    null,
+//                    null,
+//                )
+//            }
+//        )
+    }
+}
+
+@Composable
+fun SavingsAccountTransactionContent(
+    transactionList: List<Transactions>,
+) {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.SpaceBetween
+    ) {
+        LazyColumn {
+            items(items = transactionList) {
+                SavingsAccountTransactionListItem(it)
+                HorizontalDivider(
+                    thickness = 1.dp,
+                    color = Color.Gray,
+                    modifier = Modifier.padding(vertical = 3.dp)
+                )
+            }
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.Bottom
+        ) {
+            Text(
+                text = stringResource(id = R.string.need_help),
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = stringResource(id = R.string.help_line_number),
+                color = MaterialTheme.colorScheme.primary
             )
         }
     }
 }
 
 
-
 @Composable
-fun SavingsAccountTransactionListItem(transaction: Transactions?) {
-    val color = getColor(transaction?.transactionType)
+fun SavingsAccountTransactionListItem(transaction: Transactions) {
+    val context = LocalContext.current
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -197,12 +217,10 @@ fun SavingsAccountTransactionListItem(transaction: Transactions?) {
     ) {
         Image(
             painter = painterResource(
-                id = if(color == ColorSelect.GREEN) R.drawable.triangular_green_view
-                else R.drawable.triangular_red_view),
+                id = getTransactionTriangleResId(transaction.transactionType)
+            ),
             contentDescription = stringResource(id = R.string.savings_account_transaction),
-            modifier = Modifier
-                .size(55.dp)
-                .padding(6.dp)
+            modifier = Modifier.size(56.dp).padding(4.dp)
         )
         Column(
             modifier = Modifier.padding(4.dp)
@@ -212,18 +230,15 @@ fun SavingsAccountTransactionListItem(transaction: Transactions?) {
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Text(
-                    text = getDateAsString(transaction?.date),
+                    text = getDateAsString(transaction.date),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = stringResource(
                         id = R.string.string_and_string,
-                        transaction?.currency?.displaySymbol ?: transaction?.currency?.code ?: "",
-                        CurrencyUtil.formatCurrency(
-                            MifosSelfServiceApp.context ,
-                            transaction?.amount,
-                        )
+                        transaction.currency?.displaySymbol ?: transaction.currency?.code ?: "",
+                        CurrencyUtil.formatCurrency(context, transaction.amount,)
                     ),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurface
@@ -234,7 +249,7 @@ fun SavingsAccountTransactionListItem(transaction: Transactions?) {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = transaction?.transactionType?.value ?: "",
+                    text = transaction.transactionType?.value ?: "",
                     style = MaterialTheme.typography.labelMedium,
                     modifier = Modifier.alpha(0.7f),
                     color = MaterialTheme.colorScheme.onSurface
@@ -242,15 +257,11 @@ fun SavingsAccountTransactionListItem(transaction: Transactions?) {
                 Text(
                     text = stringResource(
                         id = R.string.string_and_string,
-                        transaction?.currency?.displaySymbol ?: transaction?.currency?.code ?: "",
-                        CurrencyUtil.formatCurrency(
-                            MifosSelfServiceApp.context ,
-                            transaction?.runningBalance ,
-                        )
+                        transaction.currency?.displaySymbol ?: transaction.currency?.code ?: "",
+                        CurrencyUtil.formatCurrency(context, transaction.runningBalance)
                     ),
                     style = MaterialTheme.typography.labelMedium,
-                    modifier = Modifier
-                        .alpha(0.7f),
+                    modifier = Modifier.alpha(0.7f),
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }
@@ -258,7 +269,7 @@ fun SavingsAccountTransactionListItem(transaction: Transactions?) {
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    text = transaction?.paymentDetailData?.paymentType?.name.toString(),
+                    text = transaction.paymentDetailData?.paymentType?.name.toString(),
                     style = MaterialTheme.typography.labelMedium,
                     modifier = Modifier.alpha(0.7f),
                     color = MaterialTheme.colorScheme.onSurface
@@ -273,12 +284,15 @@ private fun filterSavingsAccountTransactionsByType(
     viewModel: SavingAccountsTransactionViewModel,
     transactionsList: List<Transactions?>,
     context: Context?
-    ): List<Transactions?> {
+): List<Transactions?> {
     val filteredSavingsTransactions: MutableList<Transactions?> = ArrayList()
-    for (status in viewModel
-        .getCheckedStatus(statusModelList)!!) {
+    for (status in viewModel.getCheckedStatus(statusModelList)!!) {
         viewModel
-            .filterTransactionListByType(transactionsList, status, getCheckBoxStatusStrings(context))
+            .filterTransactionListByType(
+                transactionsList,
+                status,
+                getCheckBoxStatusStrings(context)
+            )
             ?.let { filteredSavingsTransactions.addAll(it) }
     }
     return filteredSavingsTransactions
@@ -297,102 +311,27 @@ private fun getCheckBoxStatusStrings(context: Context?): CheckBoxStatusUtil {
     }
 }
 
-
-
-@Composable
-fun SavingsAccountTransactionContent(
-    transactionList: List<Transactions?>,
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize(),
-        verticalArrangement = Arrangement.SpaceBetween
-    ) {
-        LazyColumn {
-            items(items = transactionList) {
-                SavingsAccountTransactionListItem(it)
-                Divider(
-                    thickness = 1.dp,
-                    color = Color.Gray,
-                    modifier = Modifier.padding(vertical = 3.dp)
-                )
-            }
-        }
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(5.dp),
-            verticalAlignment = Alignment.Bottom
-        ) {
-            Text(text = stringResource(id = R.string.need_help),
-                color = MaterialTheme.colorScheme.onSurface)
-            Text(text = stringResource(id = R.string.help_line_number), 
-                color = MaterialTheme.colorScheme.primary)
-        }
-    }
-}
-
-private enum class ColorSelect {
-    RED, GREEN
-}
-
-private fun getColor(transactionType: TransactionType?): ColorSelect {
-    if (transactionType?.deposit == true) {
-        return ColorSelect.GREEN
-    }
-    if (transactionType?.dividendPayout == true) {
-        return ColorSelect.RED
-    }
-    if (transactionType?.withdrawal == true) {
-        return ColorSelect.RED
-    }
-    if (transactionType?.interestPosting == true) {
-        return ColorSelect.GREEN
-    }
-    if (transactionType?.feeDeduction == true) {
-        return ColorSelect.RED
-    }
-    if (transactionType?.initiateTransfer == true) {
-        return ColorSelect.RED
-    }
-    if (transactionType?.approveTransfer == true) {
-        return ColorSelect.RED
-    }
-    if (transactionType?.withdrawTransfer == true) {
-        return ColorSelect.RED
-    }
-    if (transactionType?.rejectTransfer == true) {
-        return ColorSelect.GREEN
-    }
-    return if (transactionType?.overdraftFee == true) {
-        ColorSelect.RED
-    } else {
-        ColorSelect.GREEN
-    }
-}
-
 class SavingsAccountTransactionUiStatesParameterProvider :
-    PreviewParameterProvider<SavingsAccountUiState> {
-    override val values: Sequence<SavingsAccountUiState>
+    PreviewParameterProvider<SavingsAccountTransactionUiState> {
+    override val values: Sequence<SavingsAccountTransactionUiState>
         get() = sequenceOf(
-            SavingsAccountUiState.SuccessLoadingSavingsWithAssociations(SavingsWithAssociations()),
-            SavingsAccountUiState.Error,
-            SavingsAccountUiState.Error,
-            SavingsAccountUiState.Loading,
+            SavingsAccountTransactionUiState.Success(listOf()),
+            SavingsAccountTransactionUiState.Error(""),
+            SavingsAccountTransactionUiState.Loading,
         )
 }
 
 
-@Preview(showSystemUi = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview(showSystemUi = true)
 @Composable
 fun SavingsAccountTransactionScreenPreview(
-    @PreviewParameter(SavingsAccountTransactionUiStatesParameterProvider::class) savingsAccountUiState: SavingsAccountUiState
+    @PreviewParameter(SavingsAccountTransactionUiStatesParameterProvider::class) savingsAccountUiState: SavingsAccountTransactionUiState
 ) {
     MifosMobileTheme {
         SavingsAccountTransactionScreen(
-            viewModel = hiltViewModel(),
-            navigateBack = {}
+            uiState = savingsAccountUiState,
+            navigateBack = {},
+            retryConnection = {}
         )
     }
 }

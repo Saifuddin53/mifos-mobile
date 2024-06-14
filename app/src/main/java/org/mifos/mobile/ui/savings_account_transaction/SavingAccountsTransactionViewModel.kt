@@ -11,8 +11,13 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
+import org.mifos.mobile.R
 import org.mifos.mobile.models.CheckboxStatus
+import org.mifos.mobile.models.accounts.savings.SavingsWithAssociations
+import org.mifos.mobile.models.accounts.savings.TransactionType
 import org.mifos.mobile.models.accounts.savings.Transactions
+import org.mifos.mobile.models.templates.account.AccountOptionsTemplate
+import org.mifos.mobile.models.templates.savings.SavingsAccountTemplate
 import org.mifos.mobile.repositories.SavingsAccountRepository
 import org.mifos.mobile.utils.CheckBoxStatusUtil
 import org.mifos.mobile.utils.Constants
@@ -26,9 +31,8 @@ import javax.inject.Inject
 class SavingAccountsTransactionViewModel @Inject constructor(private val savingsAccountRepositoryImp: SavingsAccountRepository) :
     ViewModel() {
 
-    private val _savingAccountsTransactionUiState =
-        MutableStateFlow<SavingsAccountUiState>(SavingsAccountUiState.Initial)
-    val savingAccountsTransactionUiState: StateFlow<SavingsAccountUiState> get() = _savingAccountsTransactionUiState
+    private val _savingAccountsTransactionUiState = MutableStateFlow<SavingsAccountTransactionUiState>(SavingsAccountTransactionUiState.Loading)
+    val savingAccountsTransactionUiState: StateFlow<SavingsAccountTransactionUiState> get() = _savingAccountsTransactionUiState
 
     private var _savingsId: Long = 0
     val savingsId get() = _savingsId
@@ -40,8 +44,7 @@ class SavingAccountsTransactionViewModel @Inject constructor(private val savings
         MutableStateFlow<Long?>(Instant.now().toEpochMilli())
     val startDate: StateFlow<Long?> get() = _startDate
 
-    private val _endDate =
-        MutableStateFlow<Long?>(Instant.now().toEpochMilli())
+    private val _endDate = MutableStateFlow<Long?>(Instant.now().toEpochMilli())
     val endDate: StateFlow<Long?> get() = _endDate
 
     val radioGroup = listOf("", "date", "fourWeeks", "threeMonths", "sixMonths")
@@ -53,17 +56,16 @@ class SavingAccountsTransactionViewModel @Inject constructor(private val savings
     private val _checkboxStates =
         MutableStateFlow<List<CheckboxStatus?>?>(null)
 
-    val checkboxStates:StateFlow<List<CheckboxStatus?>?> get() = _checkboxStates
+    val checkboxStates: StateFlow<List<CheckboxStatus?>?> get() = _checkboxStates
 
-    private val _transactionPeriodCheck =
-        MutableStateFlow(false)
+    private val _transactionPeriodCheck = MutableStateFlow(false)
 
-    val transactionPeriodCheck:StateFlow<Boolean> get() = _transactionPeriodCheck
+    val transactionPeriodCheck: StateFlow<Boolean> get() = _transactionPeriodCheck
 
     private val _selectedCheckboxIndexList =
         MutableStateFlow<List<Int>>(emptyList())
 
-    val selectedCheckboxIndexList:StateFlow<List<Int>> get() = _selectedCheckboxIndexList
+    val selectedCheckboxIndexList: StateFlow<List<Int>> get() = _selectedCheckboxIndexList
 
     fun setSavingsId(savingsId: Long) {
         _savingsId = savingsId
@@ -89,15 +91,14 @@ class SavingAccountsTransactionViewModel @Inject constructor(private val savings
      */
     fun loadSavingsWithAssociations(accountId: Long) {
         viewModelScope.launch {
-            _savingAccountsTransactionUiState.value = SavingsAccountUiState.Loading
+            _savingAccountsTransactionUiState.value = SavingsAccountTransactionUiState.Loading
             savingsAccountRepositoryImp.getSavingsWithAssociations(
                 accountId,
                 Constants.TRANSACTIONS,
             ).catch {
-                _savingAccountsTransactionUiState.value = SavingsAccountUiState.Error
+                _savingAccountsTransactionUiState.value = SavingsAccountTransactionUiState.Error(it.message)
             }.collect {
-                _savingAccountsTransactionUiState.value =
-                    SavingsAccountUiState.SuccessLoadingSavingsWithAssociations(it)
+                _savingAccountsTransactionUiState.value = SavingsAccountTransactionUiState.Success(it.transactions)
             }
         }
     }
@@ -111,12 +112,12 @@ class SavingAccountsTransactionViewModel @Inject constructor(private val savings
      * @param lastDate                      Last date for filtering
      */
     fun filterTransactionList(
-        savingAccountsTransactionList: List<Transactions?>?,
+        savingAccountsTransactionList: List<Transactions>,
         startDate: Long?,
         lastDate: Long?,
     ) {
-        if(startDate == null && lastDate == null) {
-            _savingAccountsTransactionUiState.value = SavingsAccountUiState.ShowFilteredTransactionsList(savingAccountsTransactionList)
+        if (startDate == null && lastDate == null) {
+            _savingAccountsTransactionUiState.value = SavingsAccountTransactionUiState.Success(savingAccountsTransactionList)
             return
         }
         val list = when {
@@ -127,11 +128,9 @@ class SavingAccountsTransactionViewModel @Inject constructor(private val savings
                     }
                     .toList().blockingGet()
             }
-
             else -> null
         }
-        _savingAccountsTransactionUiState.value =
-            SavingsAccountUiState.ShowFilteredTransactionsList(list)
+        _savingAccountsTransactionUiState.value = SavingsAccountTransactionUiState.Success(list)
     }
 
     /**
@@ -241,5 +240,29 @@ class SavingAccountsTransactionViewModel @Inject constructor(private val savings
     fun setTransactionPeriodCheck(check: Boolean) {
         _transactionPeriodCheck.value = check
     }
+}
 
+sealed class SavingsAccountTransactionUiState {
+    data object Loading: SavingsAccountTransactionUiState()
+    data class Error(val errorMessage: String?): SavingsAccountTransactionUiState()
+    data class Success(val savingAccountsTransactionList: List<Transactions>?): SavingsAccountTransactionUiState()
+}
+
+
+fun getTransactionTriangleResId(transactionType: TransactionType?): Int {
+    return transactionType?.run {
+        when {
+            deposit == true -> R.drawable.triangular_green_view
+            dividendPayout == true -> R.drawable.triangular_red_view
+            withdrawal == true -> R.drawable.triangular_red_view
+            interestPosting == true -> R.drawable.triangular_green_view
+            feeDeduction == true -> R.drawable.triangular_red_view
+            initiateTransfer == true -> R.drawable.triangular_red_view
+            approveTransfer == true -> R.drawable.triangular_red_view
+            withdrawTransfer == true -> R.drawable.triangular_red_view
+            rejectTransfer == true -> R.drawable.triangular_green_view
+            overdraftFee == true -> R.drawable.triangular_red_view
+            else -> R.drawable.triangular_green_view
+        }
+    } ?: R.drawable.triangular_red_view
 }
