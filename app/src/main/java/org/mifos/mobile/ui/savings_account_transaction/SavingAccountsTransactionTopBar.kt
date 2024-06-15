@@ -25,6 +25,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.mifos.mobile.R
+import org.mifos.mobile.core.ui.component.MifosTopBar
 import org.mifos.mobile.core.ui.theme.MifosMobileTheme
 
 
@@ -36,15 +37,19 @@ fun SavingAccountsTransactionTopBar(
 ) {
     TopAppBar(
         modifier = Modifier,
-        title = { Text(text = stringResource(id = R.string.savings_account_transaction)
-            ,  fontSize = 18.sp) },
+        title = {
+            Text(
+                text = stringResource(id = R.string.savings_account_transaction),
+                fontSize = 18.sp
+            )
+        },
         navigationIcon = {
             IconButton(
                 onClick = { navigateBack.invoke() }
             ) {
                 Icon(
                     imageVector = Icons.Filled.ArrowBack,
-                    contentDescription = "Back Arrow",
+                    contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurface
                 )
             }
@@ -56,7 +61,7 @@ fun SavingAccountsTransactionTopBar(
             IconButton(onClick = { openFilterDialog() }) {
                 Icon(
                     imageVector = Icons.Filled.FilterList,
-                    contentDescription = "Menu",
+                    contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurface
                 )
             }

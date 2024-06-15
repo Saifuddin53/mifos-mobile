@@ -37,6 +37,30 @@ class SavingAccountsTransactionViewModel @Inject constructor(private val savings
     private var _savingsId: Long = 0
     val savingsId get() = _savingsId
 
+    fun setSavingsId(savingsId: Long) {
+        _savingsId = savingsId
+        loadSavingsWithAssociations(savingsId)
+    }
+
+    fun loadSavingsWithAssociations(accountId: Long) {
+        viewModelScope.launch {
+            _savingAccountsTransactionUiState.value = SavingsAccountTransactionUiState.Loading
+            savingsAccountRepositoryImp.getSavingsWithAssociations(
+                accountId,
+                Constants.TRANSACTIONS,
+            ).catch {
+                _savingAccountsTransactionUiState.value = SavingsAccountTransactionUiState.Error(it.message)
+            }.collect {
+                _savingAccountsTransactionUiState.value = SavingsAccountTransactionUiState.Success(it.transactions)
+            }
+        }
+    }
+
+
+
+
+
+
     private val _isDialogOpen = MutableStateFlow(false)
     val isDialogOpen: StateFlow<Boolean> get() = _isDialogOpen
 
@@ -67,10 +91,7 @@ class SavingAccountsTransactionViewModel @Inject constructor(private val savings
 
     val selectedCheckboxIndexList: StateFlow<List<Int>> get() = _selectedCheckboxIndexList
 
-    fun setSavingsId(savingsId: Long) {
-        _savingsId = savingsId
-        loadSavingsWithAssociations(savingsId)
-    }
+
     /**
      * Filters [List] of [CheckboxStatus]
      * @param statusModelList [List] of [CheckboxStatus]
@@ -82,26 +103,6 @@ class SavingAccountsTransactionViewModel @Inject constructor(private val savings
             .filter { (_, _, isChecked) -> isChecked }.toList().blockingGet()
     }
 
-    /**
-     * Load details of a particular saving account from the server and notify the view
-     * to display it. Notify the view, in case there is any error in fetching
-     * the details from server.
-     *
-     * @param accountId Id of Savings Account
-     */
-    fun loadSavingsWithAssociations(accountId: Long) {
-        viewModelScope.launch {
-            _savingAccountsTransactionUiState.value = SavingsAccountTransactionUiState.Loading
-            savingsAccountRepositoryImp.getSavingsWithAssociations(
-                accountId,
-                Constants.TRANSACTIONS,
-            ).catch {
-                _savingAccountsTransactionUiState.value = SavingsAccountTransactionUiState.Error(it.message)
-            }.collect {
-                _savingAccountsTransactionUiState.value = SavingsAccountTransactionUiState.Success(it.transactions)
-            }
-        }
-    }
 
     /**
      * Used for filtering [List] of [Transactions] according to `startDate` and
@@ -247,7 +248,6 @@ sealed class SavingsAccountTransactionUiState {
     data class Error(val errorMessage: String?): SavingsAccountTransactionUiState()
     data class Success(val savingAccountsTransactionList: List<Transactions>?): SavingsAccountTransactionUiState()
 }
-
 
 fun getTransactionTriangleResId(transactionType: TransactionType?): Int {
     return transactionType?.run {

@@ -68,9 +68,9 @@ fun SavingsAccountTransactionScreen(
     val uiState by viewModel.savingAccountsTransactionUiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
-    LaunchedEffect(key1 = Unit) {
-        viewModel.setCheckboxStatesList(context)
-    }
+//    LaunchedEffect(key1 = Unit) {
+//        viewModel.setCheckboxStatesList(context)
+//    }
 
     SavingsAccountTransactionScreen(
         uiState = uiState,
@@ -279,24 +279,24 @@ fun SavingsAccountTransactionListItem(transaction: Transactions) {
     }
 }
 
-private fun filterSavingsAccountTransactionsByType(
-    statusModelList: List<CheckboxStatus?>?,
-    viewModel: SavingAccountsTransactionViewModel,
-    transactionsList: List<Transactions?>,
-    context: Context?
-): List<Transactions?> {
-    val filteredSavingsTransactions: MutableList<Transactions?> = ArrayList()
-    for (status in viewModel.getCheckedStatus(statusModelList)!!) {
-        viewModel
-            .filterTransactionListByType(
-                transactionsList,
-                status,
-                getCheckBoxStatusStrings(context)
-            )
-            ?.let { filteredSavingsTransactions.addAll(it) }
-    }
-    return filteredSavingsTransactions
-}
+//private fun filterSavingsAccountTransactionsByType(
+//    statusModelList: List<CheckboxStatus?>?,
+//    viewModel: SavingAccountsTransactionViewModel,
+//    transactionsList: List<Transactions?>,
+//    context: Context?
+//): List<Transactions?> {
+//    val filteredSavingsTransactions: MutableList<Transactions?> = ArrayList()
+//    for (status in viewModel.getCheckedStatus(statusModelList)!!) {
+//        viewModel
+//            .filterTransactionListByType(
+//                transactionsList,
+//                status,
+//                getCheckBoxStatusStrings(context)
+//            )
+//            ?.let { filteredSavingsTransactions.addAll(it) }
+//    }
+//    return filteredSavingsTransactions
+//}
 
 private fun getCheckBoxStatusStrings(context: Context?): CheckBoxStatusUtil {
     return CheckBoxStatusUtil().apply {
