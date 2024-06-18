@@ -13,7 +13,7 @@ import org.mifos.mobile.utils.Constants
 
 
 @AndroidEntryPoint
-class SavingAccountsTransactionFragment : BaseFragment() {
+class SavingAccountsTransactionComposeFragment : BaseFragment() {
 
     private val viewModel: SavingAccountsTransactionViewModel by viewModels()
 
@@ -40,8 +40,8 @@ class SavingAccountsTransactionFragment : BaseFragment() {
     }
 
     companion object {
-        fun newInstance(savingsId: Long?): SavingAccountsTransactionFragment {
-            val fragment = SavingAccountsTransactionFragment()
+        fun newInstance(savingsId: Long?): SavingAccountsTransactionComposeFragment {
+            val fragment = SavingAccountsTransactionComposeFragment()
             val args = Bundle()
             if (savingsId != null) args.putLong(Constants.SAVINGS_ID, savingsId)
             fragment.arguments = args
