@@ -3,8 +3,6 @@ package org.mifos.mobile.ui.savings_account_transaction
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -27,6 +25,7 @@ import org.mifos.mobile.R
 import org.mifos.mobile.core.ui.component.EmptyDataView
 import org.mifos.mobile.core.ui.component.MFScaffold
 import org.mifos.mobile.core.ui.component.MifosErrorComponent
+import org.mifos.mobile.core.ui.component.MifosIcons
 import org.mifos.mobile.core.ui.component.MifosProgressIndicatorOverlay
 import org.mifos.mobile.core.ui.component.MifosTopBar
 import org.mifos.mobile.core.ui.theme.MifosMobileTheme
@@ -83,7 +82,7 @@ fun SavingsAccountTransactionScreen(
                 actions = {
                     IconButton(onClick = { isDialogOpen = true }) {
                         Icon(
-                            imageVector = Icons.Filled.FilterList,
+                            imageVector = MifosIcons.FilterList,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onSurface
                         )
